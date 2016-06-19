@@ -14,9 +14,12 @@ Company_Report <- read.csv(file = "C:/Users/GamingFoSho/Documents/wdR/hubspot-cr
 c_df <- data.frame(Company_Report)
 
 
+
+
+
+
 c_df$Time.Zone <- NULL
 c_df$Lifecycle.Stage <- NULL
-
 c_df$Account.Type <- NULL
 c_df$About.Us <- NULL
 c_df$Budget.Cycle <- NULL
@@ -58,13 +61,15 @@ c_df <- mutate(c_df, Number.of.Pageviews = num_pviews_vec)
 
 
 library(plyr)
-summary(or_df)
+
+
+or_df$Domain <- tolower(or_df$Domain)
+or_day_vec <- as.Date(or_df$day, "%m/%d/%Y")
+or_df <- mutate(or_df, day = or_day_vec)
 or_df <- mutate(or_df, Orders = 1)
+or_df <- or_df[order(or_df$Domain, or_df$day),]
 or_df <- ddply(or_df, .(Domain), mutate, Order_Number = cumsum(Orders))
 or_df$Orders <- NULL
-or_df$name <- NULL
-str(or_df)
-str(c_df)
 
 
 or_num_df1 <- or_df
@@ -110,7 +115,10 @@ str(c_df)
 
 c_df <- mutate(c_df, Domain = Company.Domain.Name)
 c_df$Company.Domain.Name <- NULL
+c_df$Domain <- tolower(c_df$Domain)
+or_num_df1$Domain <- tolower(or_num_df1$Domain)
 company_df <- inner_join(or_num_df1, c_df, by = "Domain")
+
 
 
 str(company_df)
@@ -265,6 +273,73 @@ na_count <- sapply(company_df, function(y) sum(length(which(is.na(y)))))
 na_count
 str(company_df)
 
+modeltest1 <- lm(total_revenue ~ Number.of.Visits, data = company_df)
+summary(modeltest1)
+
+#Creating contact_df from hubspot contacts spreadsheet
+Contact_Report <- read.csv(file = "C:/Users/GamingFoSho/Documents/Contacts Clean.csv", header=TRUE, sep=",", na.strings = "")
+contact_df <- data.frame(Contact_Report)
+
+
+contact_df <- separate(contact_df, Email, c("Email Prefix", "Domain"), sep = "@")
+contact_df$Domain <- tolower(contact_df$Domain)
+contact_df <- mutate(contact_df, Count = 1)
+contact_df <- ddply(contact_df, .(Domain), mutate, Domain_Count = cumsum(Count))
+
+contact_df <- filter(contact_df, Domain_Count <= 10)
+
+Contact_Num_vec <- contact_df$Domain_Count
+Contact_Num_vec1 <- ifelse((Contact_Num_vec == 1), c("Contact_One"), c("Unknown"))
+Contact_Num_vec2 <- ifelse((Contact_Num_vec == 2), c("Contact_Two"), Contact_Num_vec1)
+Contact_Num_vec3 <- ifelse((Contact_Num_vec == 3), c("Contact_Three"), Contact_Num_vec2)
+Contact_Num_vec4 <- ifelse((Contact_Num_vec == 4), c("Contact_Four"), Contact_Num_vec3)
+Contact_Num_vec5 <- ifelse((Contact_Num_vec == 5), c("Contact_Five"), Contact_Num_vec4)
+Contact_Num_vec6 <- ifelse((Contact_Num_vec == 6), c("Contact_Six"), Contact_Num_vec5)
+Contact_Num_vec7 <- ifelse((Contact_Num_vec == 7), c("Contact_Seven"), Contact_Num_vec6)
+Contact_Num_vec8 <- ifelse((Contact_Num_vec == 8), c("Contact_Eight"), Contact_Num_vec7)
+Contact_Num_vec9 <- ifelse((Contact_Num_vec == 9), c("Contact_Nine"), Contact_Num_vec8)
+Contact_Num_vec10 <- ifelse((Contact_Num_vec == 10), c("Contact_Ten"), Contact_Num_vec9)
+
+contact_df <- mutate(contact_df, Contact_Count = Contact_Num_vec10)
+
+
+emails_del_df <- select(contact_df, Domain, Emails.Delivered, Contact_Count)
+emails_del_df <- spread(emails_del_df, Contact_Count, Emails.Delivered, fill = 0)
+emails_del_df <- mutate(emails_del_df, Total_Emails_Delivered = Contact_One + Contact_Two + Contact_Three + Contact_Four + Contact_Five + Contact_Six + Contact_Seven + Contact_Eight + Contact_Nine + Contact_Ten)
+emails_del_df <- select(emails_del_df, Domain, Total_Emails_Delivered)
+company_df <- inner_join(company_df, emails_del_df, by = "Domain")
+company_df$Emails.Delivered <- NULL
+
+emails_open_df <- select(contact_df, Domain, Emails.Opened, Contact_Count)
+emails_open_df <- spread(emails_open_df, Contact_Count, Emails.Opened, fill = 0)
+emails_open_df <- mutate(emails_open_df, Total_Emails_Opened = Contact_One + Contact_Two + Contact_Three + Contact_Four + Contact_Five + Contact_Six + Contact_Seven + Contact_Eight + Contact_Nine + Contact_Ten)
+emails_open_df <- select(emails_open_df, Domain, Total_Emails_Opened)
+company_df <- inner_join(company_df, emails_open_df, by = "Domain")
+
+emails_clicked_df <- select(contact_df, Domain, Emails.Clicked, Contact_Count)
+emails_clicked_df <- spread(emails_clicked_df, Contact_Count, Emails.Clicked, fill = 0)
+emails_clicked_df <- mutate(emails_clicked_df, Total_Emails_Clicked = Contact_One + Contact_Two + Contact_Three + Contact_Four + Contact_Five + Contact_Six + Contact_Seven + Contact_Eight + Contact_Nine + Contact_Ten)
+emails_clicked_df <- select(emails_clicked_df, Domain, Total_Emails_Clicked)
+company_df <- inner_join(company_df, emails_clicked_df, by = "Domain")
+
+contact_state_df <- select(contact_df, Domain, State.Region, Contact_Count)
+contact_state_df <- spread(contact_state_df, Contact_Count, State.Region)
+contact_state_df <- select(contact_state_df, Domain, Contact_One)
+contact_state_df$Contact_One <- addNAstr(contact_state_df$Contact_One, value =  "Unknown")
+company_df <- inner_join(company_df, contact_state_df, by = "Domain")
+
+
+company_df <- mutate(company_df, Emails_Opened_Percent = Total_Emails_Opened / Total_Emails_Delivered)
+company_df$Emails_Opened_Percent <- ifelse(is.na(company_df$Emails_Opened_Percent), 0, company_df$Emails_Opened_Percent)
+
+company_df <- mutate(company_df, Emails_Clicked_Percent = Total_Emails_Clicked / Total_Emails_Delivered)
+company_df$Emails_Clicked_Percent <- ifelse(is.na(company_df$Emails_Clicked_Percent), 0, company_df$Emails_Clicked_Percent)
+
+modeltest3 <- lm(total_revenue ~ Emails_Clicked_Percent, data = company_df)
+summary(modeltest3)
+
+
+
 
 subdf <- company_df
 
@@ -299,39 +374,19 @@ subdf$Order_Three_Amount <- NULL
 subdf$Order_Two_Amount <- NULL
 subdf$Order_One_Amount <- NULL
 
-
+na_count <- sapply(subdf, function(y) sum(length(which(is.na(y)))))
+na_count
+str(company_df)
 
 str(subdf)
 subdf$Number.of.Pageviews
 
-lm.1 <- lm(total_revenue~., data = subdf)
+lm.1 <- lm(total_revenue~. -Domain, data = subdf)
 summary(lm.1)
 str(lm.1)
 
-
-# Algorythm
-x <- model.matrix(total_revenue~., data = subdf)[, -1]       
-y <- subdf$total_revenue                                                    
-
-library(glmnet)
-grid = 10^seq(10, -2, length = 100)
-lasso.train <- glmnet(x, y, family = "binomial", alpha = 1, lambda = grid)
-dim(coef(lasso.train))
-
-set.seed(123)
-cv.out = cv.glmnet(x,y,alpha=1,family="binomial")
-plot(cv.out)
-bestlam = cv.out$lambda.min
-
-train.lasso = predict(lasso.train, s=bestlam, newx=x, type="class")
-
-mean((train.lasso - y)^2)
-
-out = glmnet(x,y,alpha=1,lambda=grid,family="binomial")
-lasso.coef = predict(lasso.train,type="coefficients",s=bestlam)[1:56,]  
-lasso.coef
-lasso.coef[lasso.coef!=0] # n-var
-length(lasso.coef[lasso.coef!=0])
+modeltest <- lm(total_revenue ~ Number.of.Visits, data = subdf)
+summary(modeltest)
 
 
 
