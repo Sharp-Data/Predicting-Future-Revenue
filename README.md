@@ -1,6 +1,6 @@
 # Predicting Future Revenue: StandDesk B2B Customers
 
-## Introduction: The Problem
+### Introduction: The Problem
 
 Leaving money on the table is a problem most companies try to avoid. It’s an issue that
 presents itself to business in many forms. As a business gains more customers it can become
@@ -8,14 +8,14 @@ increasingly difficult to determine which of them are likely to order more produ
 Our focus will be on maximizing revenue from current customers who are likely to make
 additional purchases. 
 
-## Data Set
+### Data Set
 
 The StandDesk dataset consists of 3 csv files:
-- Order Report: Sales by customer 6.24wID1.csv (Shopify)
-- Company Report: hubspot-crm-view-companies2016-06-24wIDclean1.csv (Hubspot)
-- Contact Report: hubspot-crm-view-contacts2016-06-24wID2.csv (Hubspot)
+- *Order Report: Sales by customer 6.24wID1.csv (Shopify)*
+- *Company Report: hubspot-crm-view-companies2016-06-24wIDclean1.csv (Hubspot)*
+- *Contact Report: hubspot-crm-view-contacts2016-06-24wID2.csv (Hubspot)*
 
-## Conclusion
+### Conclusion
 
 Unfortunately, the final result of this project is that we currently have insufficient accurate data to use
 to predict future revenue of StandDesk’s B2B customers. These results underscore the importance of
