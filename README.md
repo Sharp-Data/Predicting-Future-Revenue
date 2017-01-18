@@ -1,4 +1,4 @@
-# Predicting Future Revenue: StandDesk B2B Customers
+# Project: Predicting Future Revenue - StandDesk B2B Customers
 
 ### Introduction: The Problem
 
